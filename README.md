@@ -24,5 +24,5 @@ To Provide Solution for ryk
 - Event collection needs optimization to reduce false positives
 - Documentation needs expansion for deployment procedures
 
-[No Error with local_Rules.xml](https://github.com/user-attachments/assets/d9c70d50-6a94-4225-9a6a-bc2760a31747)
-[No Error with sysmon_ryk_client.xml](https://github.com/user-attachments/assets/20a3f861-3d10-4694-b59b-caac854c27ae)
+![No Error with local_Rules.xml](https://github.com/user-attachments/assets/d9c70d50-6a94-4225-9a6a-bc2760a31747)  <br />
+![No Error with sysmon_ryk_client.xml](https://github.com/user-attachments/assets/20a3f861-3d10-4694-b59b-caac854c27ae)  <br />
