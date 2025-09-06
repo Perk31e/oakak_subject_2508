@@ -1,0 +1,115 @@
+<Sysmon schemaversion="4.90">
+   <!-- Capture all hashes -->
+   <HashAlgorithms>*</HashAlgorithms>
+   <EventFiltering>
+      <!-- Event ID 1 == Process Creation. -->
+      <ProcessCreate onmatch="exclude">
+          <!-- Exclude legitimate system binaries from normal locations -->
+          <Image condition="is">C:\Windows\System32\svchost.exe</Image>
+          <Image condition="is">C:\Windows\SysWOW64\svchost.exe</Image>
+      </ProcessCreate>
+      
+      <ProcessCreate onmatch="include">
+          <!-- Office macro execution -->
+          <Rule name="office_macro_execution" groupRelation="and">
+            <ParentImage condition="end with">WINWORD.EXE</ParentImage>
+            <CommandLine condition="contains">cmd.exe /c %localappdata%\SystemFailureReporter\SystemFailureReporter.exe</CommandLine>
+          </Rule>
+
+          <!-- Malware execution chain binaries -->
+          <Rule name="systemfailurereporter_execution" groupRelation="or">
+            <Image condition="end with">SystemFailureReporter.exe</Image>         
+          </Rule>
+
+          <Rule name="fodhelper_uac_bypass" groupRelation="or">
+            <ParentImage condition="end with">fodhelper.exe</ParentImage>
+            <CommandLine condition="contains">cmd.exe /c C:\Windows\System32\fodhelper.exe</CommandLine>
+          </Rule>
+
+          <!-- Task Scheduler manipulation -->
+          <Rule name="task_scheduler_manipulation" groupRelation="and">
+            <Image condition="end with">schtasks.exe</Image>
+            <CommandLine condition="contains">SystemFailureReporter</CommandLine>
+          </Rule>
+
+          <!-- Priviledge escalation tricks -->
+          <Rule name= "privilege_escalation_indicators" groupRelation="or">
+            <ParentImage condition="end with">fodhelper.exe</ParentImage>
+          </Rule>
+
+          <!-- CMD tricks -->
+          <!-- Information Gathering About Domain & Local Users (If it matches so many false-possitive filtering can be done in Wazuh via net.exe or net1.exe)-->
+          <!-- Droppers (False Possitives exist) -->
+          <!-- Powershell commandline tricks ( This continues and should be filter in Wazuh ) -->
+          <!-- Critical Binaries -->
+          <Rule name= "critical_system_binaries" groupRelation="or">
+            <Image condition="end with">cmd.exe</Image>
+            <Image condition="end with">svchost.exe</Image>
+            <Image condition="end with">schtasks.exe</Image>
+          </Rule>
+
+          <!-- Very Suspicious Paths To Execute Binary From -->
+          <Rule name= "suspicious_execution_paths" groupRelation="or">
+            <Image condition="contains">*\AppData\Local\Temp*</Image>
+            <Image condition="contains">*\AppData\Local\SystemFailureReporter*</Image>
+          </Rule>
+
+      </ProcessCreate>
+
+      <!-- Event ID 2 == File Creation Time. -->
+      <!-- Event ID 3 == Network Connection. -->
+      <NetworkConnect onmatch="include">
+          <DestinationHostname condition="is">drmon.chickenkiller.com</DestinationHostname>
+          <DestinationIp condition="is">182.228.44.206</DestinationIp>
+          <DestinationPort condition="is">80</DestinationPort>
+          <DestinationPort condition="is">443</DestinationPort>
+      </NetworkConnect>
+
+      <!-- Event ID 5 == Process Terminated. -->
+      <!-- Event ID 6 == Driver Loaded. -->
+      <!-- Event ID 7 == Image Loaded. -->
+      <!-- Event ID 8 == CreateRemoteThread. -->
+      <!-- Event ID 9 == RawAccessRead. -->
+      <!-- Event ID 10 == ProcessAccess. -->
+      <!-- Event ID 11 == FileCreate. -->
+      <FileCreate onmatch="include">
+          <!-- Initial infection vector -->
+          <TargetFilename condition="end with">카카오크루_202411_하반기_경력채용.doc</TargetFilename>
+
+          <!-- Ransomware and malware artifacts -->      
+          <TargetFilename condition="is">readme.txt</TargetFilename>
+          <TargetFilename condition="is">b.doc</TargetFilename>
+          <TargetFilename condition="is">update.xml</TargetFilename>
+          <TargetFilename condition="is">w.png</TargetFilename>
+          <TargetFilename condition="end with">.ryk</TargetFilename>
+      </FileCreate>
+
+      <!-- Event ID 12,13,14 == RegObject added/deleted, RegValue Set, RegObject Renamed. -->
+      <RegistryEvent onmatch="include">
+          <!-- UAC Bypass via fodhelper -->
+          <TargetObject condition="begin with">HKLM\SOFTWARE\Classes\ms-settings\Shell\Open\Command</TargetObject>
+          <TargetObject condition="begin with">HKCU\Software\Classes\ms-settings\Shell\Open\Command</TargetObject>
+      </RegistryEvent>
+
+      <!-- Event ID 15 == FileStream Created. -->
+      <!-- Event ID 17,18 == PipeEvent. Log Named pipe created & Named pipe connected -->
+      <!-- Event ID 19,20,21 == WmiEvent. Log all WmiEventFilter, WmiEventConsumer, WmiEventConsumerToFilter activity-->
+      <!-- Event ID 22 == DNSEvent-->
+      <!-- Event ID 23, 26, 28 ,29 == FileRestrictionEvent. FileDeleteEvent, FileDeleteDetected, FileBlockShredding, FileExecutableDetected-->
+      <!-- To Block Executable File you can include Event ID 27 FileBlockExecutable but this time i want to detect that file so i didn't include that on purpose-->
+
+      <!-- 
+      <FileBlockExecutable onmatch="include">
+          Block svchost.exe outside of legitimate system directories
+          <Image condition="end with">svchost.exe</Image>
+          <Image condition="is not">C:\Windows\System32\svchost.exe</Image>
+          <Image condition="is not">C:\Windows\SysWOW64\svchost.exe</Image>
+      </FileBlockExecutable>
+      -->
+
+      <!-- Event ID 24 == ClipboardChange-->
+      <!-- Event ID 25 == ProcessTampering-->
+      <!-- Event ID 255 == Error-->
+      <WmiEvent onmatch="include"/>
+  </EventFiltering>
+</Sysmon>
